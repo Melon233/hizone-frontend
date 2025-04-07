@@ -1,22 +1,26 @@
 import axios from 'axios'
 const login = axios.create({
-  baseURL: 'http://localhost:8080',
+  baseURL: 'http://localhost:80/login',
   headers: {},
 })
 const user = axios.create({
-  baseURL: 'http://localhost:8081',
+  baseURL: 'http://localhost:80/user',
   headers: {},
 })
 const post = axios.create({
-  baseURL: 'http://localhost:8082',
+  baseURL: 'http://localhost:80/post',
   headers: {},
 })
 const interaction = axios.create({
-  baseURL: 'http://localhost:8083',
+  baseURL: 'http://localhost:80/interaction',
   headers: {},
 })
 const comment = axios.create({
-  baseURL: 'http://localhost:8084',
+  baseURL: 'http://localhost:80/comment',
+  headers: {},
+})
+const search = axios.create({
+  baseURL: 'http://localhost:80/search',
   headers: {},
 })
 const client = {
@@ -25,5 +29,6 @@ const client = {
   post,
   interaction,
   comment,
+  search,
 }
 export default client

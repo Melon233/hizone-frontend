@@ -55,6 +55,16 @@ const sendCheckCode = async () => {
     alert('验证码已发送')
   }
 }
+const keyword = ref('')
+const search = async () => {
+  console.log(keyword.value)
+  const res = await client.search.get('/searchPost', {
+    params: {
+      keyword: keyword.value,
+    },
+  })
+  console.log(res.data)
+}
 </script>
 <template>
   <div id="root">
@@ -68,14 +78,23 @@ const sendCheckCode = async () => {
         </div>
       </div>
     </div>
-    <!-- <router-view class="main-content" v-slot="{ Component }">
-      <keep-alive exclude="Detail">
+    <router-view class="main-content" v-slot="{ Component }">
+      <keep-alive include="Push">
         <component :is="Component" />
       </keep-alive>
-    </router-view> -->
-    <router-view class="main-content" />
+    </router-view>
+    <!-- <router-view class="main-content" /> -->
 
-    <div class="right-side-bar"></div>
+    <div class="right-side-bar">
+      <div class="tab-list">
+        <div class="tab-container">
+          <div>
+            <input v-model="keyword" type="text" placeholder="搜索" />
+          </div>
+          <button id="post-btn" @click="search()">搜索</button>
+        </div>
+      </div>
+    </div>
   </div>
   <div class="overlay" v-show="showLoginPopup"></div>
   <transition name="fade">
@@ -135,6 +154,7 @@ const sendCheckCode = async () => {
   flex: 1;
   display: flex;
   flex-direction: column;
+  align-items: end;
 }
 .right-side-bar {
   position: sticky;
@@ -143,6 +163,7 @@ const sendCheckCode = async () => {
   flex: 1;
   display: flex;
   flex-direction: column;
+  align-items: start;
 }
 .main-content {
   width: 600px;
@@ -211,9 +232,8 @@ input {
 .tab-list {
   display: flex;
   flex-direction: column;
-
+  margin-left: 20px;
   margin-right: 20px;
-  align-items: end;
 }
 .tab-container {
   width: 50px;

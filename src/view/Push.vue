@@ -223,7 +223,7 @@ onMounted(() => {
   border-radius: 50%;
 }
 .avatar {
-  border-radius: 50%;
+  border-radius: 999px;
 }
 .data {
   flex: 1;

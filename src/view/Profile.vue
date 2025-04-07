@@ -3,12 +3,10 @@ import { ref, onMounted } from 'vue'
 import cookie from 'js-cookie'
 import router from '@/router'
 import { getAvatarUrl } from '@/utility/utility'
-import { token } from '@/data/data.js'
 import client from '@/client/client.js'
 const logout = () => {
   cookie.remove('token')
   cookie.remove('user_id')
-  token.value = 2
   console.log('logout')
   router.push('/')
 }

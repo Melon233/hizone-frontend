@@ -314,6 +314,9 @@ const loadAvatar = () => {
 onMounted(() => {
   getPost()
   getCommentList()
+  window.scrollTo({
+    top: 0,
+  })
 })
 // onActivated(() => {
 //   window.scrollTo({
@@ -377,7 +380,7 @@ onMounted(() => {
             <div class="name">{{ comment.sender_id }}</div>
             <div class="time">{{ comment.comment_time }}</div>
           </div>
-          <div class="text">{{ comment.comment_content }}</div>
+          <div class="text" v-html="comment.comment_content"></div>
           <div class="metrics">
             <div class="metric" @click="handleLikeCommentClicked(comment)">
               <img class="icon" :src="getLikeIcon(comment.liked)" alt="icon" width="16" height="16" />
@@ -395,13 +398,13 @@ onMounted(() => {
             <button class="comment-btn" @click="sendReply(comment)">回复</button>
           </div>
           <div class="reply-container" v-for="reply in comment.reply_list" v-show="comment.reply_unfold">
-            <img class="avatar" :src="getAvatarUrl(comment.sender_id)" alt="avatar" />
+            <img class="avatar" :src="getAvatarUrl(reply.sender_id)" alt="avatar" />
             <div class="nav-right">
               <div class="user-data">
-                <div class="name">{{ comment.sender_id }}</div>
-                <div class="time">{{ comment.comment_time }}</div>
+                <div class="name">{{ reply.sender_id }}</div>
+                <div class="time">{{ reply.reply_time }}</div>
               </div>
-              <div class="text">{{ reply.reply_content }}</div>
+              <div class="text" v-html="reply.reply_content"></div>
               <div class="metrics">
                 <div class="metric" @click="handleLikeReplyClicked(reply)">
                   <img class="icon" :src="getLikeIcon(reply.liked)" alt="icon" width="16" height="16" />
@@ -464,7 +467,7 @@ onMounted(() => {
   width: 50px;
   height: 50px;
   margin-right: 10px;
-  border-radius: 50%;
+  border-radius: 999px;
   align-self: flex-start;
 }
 .data {
