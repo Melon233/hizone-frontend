@@ -33,7 +33,7 @@ const login = async () => {
 
 const handleAvatarClick = () => {
   if (cookie.get('user_id') != null) {
-    router.push('/profile')
+    router.push({ name: 'Profile', params: { userId: cookie.get('user_id') } })
   } else {
     console.log('not login')
     openLoginPopup()
@@ -43,7 +43,7 @@ const loadAvatar = () => {
   if (cookie.get('user_id') != null) {
     return getAvatarUrl(cookie.get('user_id'))
   } else {
-    return '/public/offline.png'
+    return '/offline.png'
   }
 }
 const sendCheckCode = async () => {
@@ -79,28 +79,26 @@ const search = async () => {
       </div>
     </div>
     <router-view class="main-content" v-slot="{ Component }">
+      <!-- <transition name="fade" mode="out-in"> -->
       <keep-alive include="Push">
         <component :is="Component" />
       </keep-alive>
+      <!-- </transition> -->
     </router-view>
-    <!-- <router-view class="main-content" /> -->
-
     <div class="right-side-bar">
       <div class="tab-list">
-        <div class="tab-container">
-          <div>
-            <input v-model="keyword" type="text" placeholder="搜索" />
-          </div>
-          <button id="post-btn" @click="search()">搜索</button>
+        <div class="search-container">
+          <input class="search-input" v-model="keyword" type="text" placeholder="搜索" />
         </div>
+        <button id="post-btn" @click="search()">搜索</button>
       </div>
     </div>
   </div>
   <div class="overlay" v-show="showLoginPopup"></div>
   <transition name="fade">
     <form class="popup" @submit.prevent="login" v-show="showLoginPopup">
-      <img class="close-icon" @click="closeLoginPopup" src="/public/close.svg" width="24" height="24" alt="close" />
-      <img class="login-image" src="/public/login-logo.png" alt="login-bg" />
+      <img class="close-icon" @click="closeLoginPopup" src="/close.svg" width="24" height="24" alt="close" />
+      <img class="login-image" src="/login-logo.png" alt="login-bg" />
       <div class="input-container">
         <input class="login-input" v-model="loginForm.email" type="text" placeholder="请输入邮箱" />
       </div>
@@ -109,7 +107,6 @@ const search = async () => {
         <button class="check-code-btn" type="button" @click="sendCheckCode">获取验证码</button>
       </div>
       <button class="login-btn" type="submit">登录</button>
-      <!-- <button class="register-btn" type="button" @click="openRegisterPopup">注册</button> -->
     </form>
   </transition>
 </template>
@@ -117,10 +114,16 @@ const search = async () => {
 #root {
   display: flex;
   flex-direction: row;
-  justify-content: center;
   align-items: flex-start;
 }
-
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.01s ease;
+}
+.fade-enter,
+.fade-leave-to {
+  opacity: 0.5;
+}
 #post-btn {
   width: 50px;
   height: 50px;
@@ -133,7 +136,7 @@ const search = async () => {
 }
 
 #logo {
-  background-image: url('/public/logo.png');
+  background-image: url('/logo.png');
   background-attachment: local;
   background-position: center;
   background-size: contain;
@@ -149,21 +152,19 @@ const search = async () => {
 }
 .left-side-bar {
   position: sticky;
-  padding-top: 60px;
-  top: 0px;
+  top: 60px;
   flex: 1;
   display: flex;
   flex-direction: column;
-  align-items: end;
+  align-items: flex-end;
 }
 .right-side-bar {
   position: sticky;
-  padding-top: 60px;
-  top: 0px;
+  top: 60px;
   flex: 1;
   display: flex;
   flex-direction: column;
-  align-items: start;
+  align-items: flex-start;
 }
 .main-content {
   width: 600px;
@@ -172,7 +173,8 @@ const search = async () => {
   box-sizing: border-box;
   border-left: 1px solid var(--dark-gray);
   border-right: 1px solid var(--dark-gray);
-  /* min-height: 110vh; */
+  /* overflow: auto; */
+  min-height: 110vh;
 }
 .popup {
   position: fixed;
@@ -192,12 +194,9 @@ const search = async () => {
   height: 102px;
   margin: 42px 0 20px 0;
 }
-input {
-  width: 340px;
-  height: 40px;
+.search-input {
+  width: 150px;
   padding: 0;
-  margin-left: 12px;
-  border-radius: 8px;
   font-size: 18px;
   background-color: var(--dark);
   border: none;
@@ -234,10 +233,11 @@ input {
   flex-direction: column;
   margin-left: 20px;
   margin-right: 20px;
+  align-items: flex-start;
 }
 .tab-container {
-  width: 50px;
-  height: 50px;
+  /* width: 50px; */
+  /* height: 50px; */
   margin-bottom: 15px;
 }
 .input-container {
@@ -299,5 +299,11 @@ input {
   background-color: rgba(0, 0, 0, 0.5); /* 透明黑色背景 */
   backdrop-filter: blur(5px); /* 模糊效果，可选 */
   z-index: 10; /* 确保遮罩层在上层 */
+}
+.search-container {
+  border: 1px solid var(--dark-gray);
+  border-radius: 999px;
+  margin-bottom: 10px;
+  padding: 5px 10px;
 }
 </style>

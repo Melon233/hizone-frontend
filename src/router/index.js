@@ -1,33 +1,40 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import Push from '@/view/Push.vue'
+import Post from '@/view/Post.vue'
+import Profile from '@/view/Profile.vue'
+import Detail from '@/view/Detail.vue'
+
 const routes = [
   {
     path: '/',
-    name: 'Home',
-    component: () => import('@/view/Push.vue'),
-  },
-  {
-    path: '/push',
+    alias: '/push',
     name: 'Push',
-    component: () => import('@/view/Push.vue'),
+    component: Push,
   },
   {
     path: '/post',
     name: 'Post',
-    component: () => import('@/view/Post.vue'),
+    component: Post,
   },
   {
-    path: '/profile',
+    path: '/profile/:userId',
     name: 'Profile',
-    component: () => import('@/view/Profile.vue'),
+    component: Profile,
   },
   {
     path: '/detail/:postId',
     name: 'Detail',
-    component: () => import('@/view/Detail.vue'),
+    component: Detail,
   },
 ]
 const router = createRouter({
   history: createWebHistory(),
   routes,
+})
+router.beforeEach((to, from, next) => {
+  if (to.name !== 'Push') {
+    window.scrollTo(0, 0)
+  }
+  next()
 })
 export default router

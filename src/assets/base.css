@@ -35,6 +35,7 @@ body {
 }
 
 button {
+    background-color: var(--dark);
     color: var(--white);
     cursor: pointer;
 }
@@ -45,6 +46,7 @@ input {
 
 div {
     box-sizing: border-box;
+    cursor: default;
 }
 
 :root {

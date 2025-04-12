@@ -20,7 +20,7 @@ const handlePost = async () => {
   }
 }
 const handleBack = () => {
-  router.push('/')
+  router.push('/push')
 }
 const handlePaste = event => {
   event.preventDefault()
@@ -52,7 +52,7 @@ onMounted(() => {
 <template>
   <div>
     <div class="head">
-      <img class="back-btn" @click="handleBack" src="/public/back.svg" width="20" height="20" />
+      <img class="back-btn" @click="handleBack" src="/arrow-left.svg" />
       <span class="title">发布</span>
     </div>
     <div id="editor" ref="editor" @paste="handlePaste" contenteditable="true"></div>
@@ -89,6 +89,8 @@ onMounted(() => {
   height: 60px;
 }
 .back-btn {
+  width: 24px;
+  height: 24px;
   cursor: pointer;
   margin: 10px;
 }

@@ -1,13 +1,13 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onBeforeUnmount, onActivated, onDeactivated } from 'vue'
 import client from '/src/client/client'
 import cookie from 'js-cookie'
-import { getAvatarUrl } from '@/utility/utility'
+import { getAvatarUrl, handleAvatarClicked, addFollow } from '@/utility/utility'
 import router from '@/router'
+import { onBeforeRouteLeave, onBeforeRouteUpdate } from 'vue-router'
 const pushList = ref([]) // 帖子列表
 const newList = ref([]) // 最新列表
 const selectedTab = ref('push')
-
 const getPush = async () => {
   const res = await client.post.get('/getPush', {
     headers: {
@@ -19,7 +19,7 @@ const getPush = async () => {
     pushList.value = res.data
   }
 }
-const getNew = async () => {}
+const getFollowPush = async () => {}
 const extractTime = time => {
   const date = new Date(time)
   const month = date.getMonth() + 1
@@ -59,17 +59,17 @@ const collectPost = async postId => {
 const getLikeIcon = postId => {
   const post = pushList.value.find(item => item.post_id === postId)
   if (post.liked) {
-    return '/public/like-true.svg'
+    return '/like-true.svg'
   } else {
-    return '/public/like-false.svg'
+    return '/like-false.svg'
   }
 }
 const getCollectIcon = postId => {
   const post = pushList.value.find(item => item.post_id === postId)
   if (post.collected) {
-    return '/public/collect-true.svg'
+    return '/collect-true.svg'
   } else {
-    return '/public/collect-false.svg'
+    return '/collect-false.svg'
   }
 }
 const cancelLikePost = async postId => {
@@ -129,11 +129,19 @@ const handleTabSelected = tab => {
   if (tab === 'push') {
     getPush()
   } else if (tab === 'new') {
-    getNew()
+    getFollowPush()
   }
 }
 onMounted(() => {
   getPush()
+})
+let y = 0
+onBeforeRouteLeave(() => {
+  y = window.scrollY
+  console.log('onDeactivated', window.scrollY)
+})
+onActivated(() => {
+  window.scrollTo({ top: y, behavior: 'auto' }) // 滚动到顶部
 })
 </script>
 <template>
@@ -156,9 +164,7 @@ onMounted(() => {
       <div class="push-list" v-show="selectedTab === 'push'">
         <div class="block" v-for="post in pushList" :key="post.post_id">
           <div class="avatar-col">
-            <div class="avatar-container">
-              <img class="avatar" :src="getAvatarUrl(post.author_id)" alt="avatar" width="50" height="50" />
-            </div>
+            <img class="avatar" :src="getAvatarUrl(post.author_id)" @click="handleAvatarClicked(post.author_id)" alt="avatar" width="50" height="50" />
           </div>
           <div class="data">
             <div class="meta-bar">
@@ -167,9 +173,10 @@ onMounted(() => {
                 <div class="time">{{ extractTime(post.post_time) }}</div>
               </div>
               <div class="meta-right">
-                <div class="follow-btn">
-                  <img class="option-icon" src="/public/option.svg" />
-                </div>
+                <!-- <button class="follow-btn" @click="addFollow(post.author_id)">关注</button> -->
+                <!-- <div class="follow-btn">
+                  <img class="option-icon" src="/option.svg" />
+                </div> -->
               </div>
             </div>
             <div class="text-container" v-html="post.post_content" @click="router.push({ name: 'Detail', params: { postId: post.post_id } })"></div>
@@ -179,7 +186,7 @@ onMounted(() => {
                 <div class="value">{{ post.like_count }}</div>
               </div>
               <div class="metric">
-                <img class="icon" @click="router.push({ name: 'Detail', params: { postId: post.post_id } })" src="/public/comment.svg" alt="icon" width="18" height="18" />
+                <img class="icon" @click="router.push({ name: 'Detail', params: { postId: post.post_id } })" src="/comment.svg" alt="icon" width="18" height="18" />
                 <div class="value">{{ post.comment_count }}</div>
               </div>
               <div class="metric">
@@ -217,13 +224,11 @@ onMounted(() => {
   margin-right: 10px;
   width: 50px;
 }
-.avatar-container {
+.avatar {
   width: 50px;
   height: 50px;
-  border-radius: 50%;
-}
-.avatar {
   border-radius: 999px;
+  cursor: pointer;
 }
 .data {
   flex: 1;
@@ -321,19 +326,24 @@ onMounted(() => {
 .option-icon:hover {
   background-color: rgba(10, 23, 31, 0.5);
 }
-.follow-btn {
+/* .follow-btn {
   position: absolute;
   aspect-ratio: 1/1;
   height: 150%;
   display: flex;
   justify-content: center;
   align-items: center;
+} */
+.follow-btn {
+  padding: 0 5px;
+  border: 1px solid var(--dark-gray);
+  border-radius: 999px;
 }
-.follow-btn:hover {
+/* .follow-btn:hover {
   background-color: rgb(10, 23, 31);
   border-radius: 50%;
   transition-duration: 0.2s;
-}
+} */
 .text-container {
   cursor: pointer;
 }

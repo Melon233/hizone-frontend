@@ -2,7 +2,7 @@
 import { nextTick, onActivated, onMounted, ref } from 'vue'
 import client from '@/client/client.js'
 import cookie from 'js-cookie'
-import { getAvatarUrl } from '@/utility/utility.js'
+import { getAvatarUrl, handleAvatarClicked } from '@/utility/utility.js'
 import router from '@/router'
 import { useRoute } from 'vue-router'
 const route = useRoute()
@@ -97,17 +97,17 @@ const collectPost = async post => {
 }
 const getLikeIcon = liked => {
   if (liked) {
-    return '/public/like-true.svg'
+    return '/like-true.svg'
   } else {
-    return '/public/like-false.svg'
+    return '/like-false.svg'
   }
 }
 
 const getCollectIcon = () => {
   if (post.value.collected) {
-    return '/public/collect-true.svg'
+    return '/collect-true.svg'
   } else {
-    return '/public/collect-false.svg'
+    return '/collect-false.svg'
   }
 }
 const cancelLikePost = async post => {
@@ -302,61 +302,82 @@ const handleReplyClicked = async commentId => {
   }
 }
 
-const deleteReply = async comment => {}
-const deleteComment = async comment => {}
+const deleteReply = async reply => {
+  const res = await client.comment.post('/deleteReply', {
+    post_id: post.value.post_id,
+    reply_id: reply.reply_id,
+    parent_comment_id: reply.parent_comment_id,
+  })
+  if (res.data === 'success') {
+    const index = commentList.value.findIndex(item => item.comment_id === reply.parent_comment_id)
+    const replyIndex = commentList.value[index].reply_list.findIndex(item => item.reply_id === reply.reply_id)
+    commentList.value[index].reply_list.splice(replyIndex, 1)
+    console.log('删除回复成功', reply)
+  } else {
+    console.log('删除回复失败', res.data)
+  }
+}
+const deleteComment = async comment => {
+  const res = await client.comment.post('/deleteComment', {
+    post_id: post.value.post_id,
+    comment_id: comment.comment_id,
+    sender_id: cookie.get('user_id'),
+  })
+  if (res.data === 'success') {
+    commentList.value.splice(commentList.value.indexOf(comment))
+    console.log('删除评论成功', comment)
+  } else {
+    console.log('删除评论失败', res.data)
+  }
+}
 const loadAvatar = () => {
   if (cookie.get('user_id') != null) {
     return getAvatarUrl(cookie.get('user_id'))
   } else {
-    return '/public/offline.png'
+    return '/offline.png'
   }
 }
-onMounted(() => {
-  getPost()
-  getCommentList()
-  window.scrollTo({
-    top: 0,
-  })
+const isLoading = ref(true)
+onMounted(async () => {
+  await Promise.all([getPost(), getCommentList()])
+  isLoading.value = false
+
+  window.scrollTo({ top: 0 })
 })
-// onActivated(() => {
-//   window.scrollTo({
-//     top: 0,
-//   })
-// })
 </script>
 <template>
   <div>
     <div class="head">
-      <img class="back-btn" @click="router.push({ name: 'Home' })" src="/public/arrow-left.svg" width="24" height="24" />
+      <img class="back-btn" @click="router.push({ name: 'Push' })" src="/arrow-left.svg" />
       <span class="title">帖子</span>
-      <img class="to-top-btn" @click="backToTop" src="/public/arrow-up.svg" width="24" height="24" />
+      <img class="to-top-btn" @click="backToTop" src="/arrow-up.svg" />
     </div>
-    <div class="block">
+    <div v-if="!isLoading" class="block">
       <div class="avatar-col">
         <div class="avatar-container">
-          <img class="avatar" :src="getAvatarUrl(post.author_id)" alt="avatar" width="50" height="50" />
+          <img class="avatar" :src="getAvatarUrl(post.author_id)" @click="handleAvatarClicked(post.author_id)" alt="avatar" />
         </div>
       </div>
       <div class="data">
         <div class="meta-bar">
           <div class="meta-left">
-            <div class="name">{{ post.author_name }}</div>
+            <div class="name" @click="handleAvatarClicked(post.author_id)">{{ post.author_name }}</div>
             <div class="time">{{ extractTime(post.post_time) }}</div>
           </div>
           <div class="meta-right">
-            <div class="follow-btn">
-              <img class="option-icon" src="/public/option.svg" />
-            </div>
+            <!-- <div class="follow-btn">
+              <img class="option-icon" src="/option.svg" />
+            </div> -->
           </div>
         </div>
-        <div class="text-container" v-html="post.post_content" @click="router.push({ name: 'Detail', params: { postId: post.post_id } })"></div>
+        <div class="text-container" v-html="post.post_content"></div>
         <div class="metrics">
           <div class="metric" @click="handleLikePostClicked(post)">
             <img class="icon" :src="getLikeIcon(post.liked)" alt="icon" width="16" height="16" />
             <div class="value">{{ post.like_count }}</div>
           </div>
           <div class="metric">
-            <img class="icon" src="/public/comment.svg" alt="icon" width="18" height="18" />
+            <img class="icon" src="/comment.svg" alt="icon" width="18" height="18" />
             <div class="value">{{ post.comment_count }}</div>
           </div>
           <div class="metric" @click="handleCollectPostClicked(post)">
@@ -366,19 +387,20 @@ onMounted(() => {
         </div>
       </div>
     </div>
-    <div class="comment-sender">
-      <img class="avatar" :src="loadAvatar()" alt="avatar" />
+    <div v-if="!isLoading" class="comment-sender">
+      <img class="avatar" :src="loadAvatar()" @click="handleAvatarClicked(cookie.get('user_id'))" alt="avatar" />
       <div class="comment-edior" ref="commentEditor" contenteditable="true"></div>
       <button class="comment-btn" @click="sendComment">评论</button>
     </div>
-    <div class="comment-block">
+    <div v-if="!isLoading" class="comment-block">
       <div class="empty-indicator" v-show="commentList.length === 0">这里期待你的第一条评论！</div>
       <div class="comment-container" v-for="comment in commentList" :key="comment.comment_id">
-        <img class="avatar" :src="getAvatarUrl(comment.sender_id)" alt="avatar" />
+        <img class="avatar" :src="getAvatarUrl(comment.sender_id)" @click="handleAvatarClicked(comment.sender_id)" alt="avatar" />
         <div class="nav-right">
           <div class="user-data">
-            <div class="name">{{ comment.sender_id }}</div>
+            <div class="name" @click="handleAvatarClicked(comment.sender_id)">{{ comment.sender_name }}</div>
             <div class="time">{{ comment.comment_time }}</div>
+            <img class="delete-btn" v-if="comment.sender_id == cookie.get('user_id')" @click="deleteComment(comment)" src="/close.svg" alt="删除" />
           </div>
           <div class="text" v-html="comment.comment_content"></div>
           <div class="metrics">
@@ -387,22 +409,23 @@ onMounted(() => {
               <div class="value">{{ comment.comment_like_count }}</div>
             </div>
             <div class="metric" @click="handleReplyListClicked(comment)">
-              <img class="icon" src="/public/comment.svg" alt="icon" width="18" height="18" />
+              <img class="icon" src="/comment.svg" alt="icon" width="18" height="18" />
               <div class="value">{{ comment.reply_count }}</div>
             </div>
             <div class="metric" @click="handleReplyClicked(comment.comment_id)">回复</div>
           </div>
           <div class="reply-sender" v-show="parentCommentId === comment.comment_id">
-            <img class="avatar" :src="loadAvatar()" alt="avatar" width="50" height="50" />
+            <img class="avatar" :src="loadAvatar()" @click="handleAvatarClicked(cookie.get('user_id'))" alt="avatar" />
             <div class="comment-edior" :id="'reply-edior' + comment.comment_id" contenteditable="true"></div>
             <button class="comment-btn" @click="sendReply(comment)">回复</button>
           </div>
           <div class="reply-container" v-for="reply in comment.reply_list" v-show="comment.reply_unfold">
-            <img class="avatar" :src="getAvatarUrl(reply.sender_id)" alt="avatar" />
+            <img class="avatar" :src="getAvatarUrl(reply.sender_id)" @click="handleAvatarClicked(reply.sender_id)" alt="avatar" />
             <div class="nav-right">
               <div class="user-data">
-                <div class="name">{{ reply.sender_id }}</div>
+                <div class="name" @click="handleAvatarClicked(reply.sender_id)">{{ reply.sender_name }}</div>
                 <div class="time">{{ reply.reply_time }}</div>
+                <img class="delete-btn" v-if="reply.sender_id == cookie.get('user_id')" @click="deleteReply(reply)" src="/close.svg" alt="删除" />
               </div>
               <div class="text" v-html="reply.reply_content"></div>
               <div class="metrics">
@@ -416,7 +439,6 @@ onMounted(() => {
           </div>
         </div>
       </div>
-      <div class="spacer"></div>
     </div>
   </div>
 </template>
@@ -435,10 +457,14 @@ onMounted(() => {
   z-index: 1;
 }
 .back-btn {
+  width: 24px;
+  height: 24px;
   cursor: pointer;
   margin: 10px;
 }
 .to-top-btn {
+  width: 24px;
+  height: 24px;
   margin-left: auto;
   margin-right: 13px;
   cursor: pointer;
@@ -461,7 +487,6 @@ onMounted(() => {
 .avatar-container {
   width: 50px;
   height: 50px;
-  border-radius: 50%;
 }
 .avatar {
   width: 50px;
@@ -469,6 +494,7 @@ onMounted(() => {
   margin-right: 10px;
   border-radius: 999px;
   align-self: flex-start;
+  cursor: pointer;
 }
 .data {
   flex: 1;
@@ -497,6 +523,7 @@ onMounted(() => {
 }
 .name {
   margin: 0 10px 0 0;
+  cursor: pointer;
 }
 .time {
   color: var(--light-gray);
@@ -562,6 +589,7 @@ onMounted(() => {
   resize: none;
   outline: none;
   margin: 5px 0;
+  cursor: text;
 }
 .comment-block {
   display: flex;
@@ -584,7 +612,7 @@ onMounted(() => {
   padding: 8px;
 }
 .spacer {
-  height: 1000px;
+  height: 110vh;
 }
 .reply-sender {
   display: flex;
@@ -604,5 +632,20 @@ onMounted(() => {
   flex-direction: row;
   border-bottom: 1px solid var(--dark-gray);
   padding: 8px;
+}
+.text-container {
+  cursor: default;
+}
+.nav-right {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+.delete-btn {
+  align-self: center;
+  margin-left: auto;
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
 }
 </style>

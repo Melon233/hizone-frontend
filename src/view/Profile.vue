@@ -2,8 +2,11 @@
 import { ref, onMounted } from 'vue'
 import cookie from 'js-cookie'
 import router from '@/router'
-import { getAvatarUrl } from '@/utility/utility'
+import { getAvatarUrl, addFollow, deleteFollow } from '@/utility/utility'
 import client from '@/client/client.js'
+import { useRoute } from 'vue-router'
+
+const route = useRoute()
 const logout = () => {
   cookie.remove('token')
   cookie.remove('user_id')
@@ -19,10 +22,16 @@ const userDetail = ref({
   nickname: '',
   post_count: 0,
   register_time: '',
-  user_id: 0,
+  user_id: route.params.userId,
 })
+
 const getUserDetail = async () => {
-  const res = await client.user.get('/getUserDetail', { params: { user_id: cookie.get('user_id') } })
+  const res = await client.user.get('/getUserDetail', {
+    params: { user_id: route.params.userId },
+    headers: {
+      Token: cookie.get('token'),
+    },
+  })
   if (res.data !== null) {
     console.log(res.data)
     userDetail.value = res.data
@@ -37,7 +46,7 @@ const closeEditPopup = () => {
 }
 const saveEdit = async () => {
   const res = await client.user.post('/updateUserInfo', {
-    user_id: cookie.get('user_id'),
+    user_id: route.params.userId,
     nickname: userDetail.value.nickname,
   })
   if (res.data === 'success') {
@@ -50,6 +59,19 @@ const saveEdit = async () => {
 const cancelEdit = () => {
   showEditPopup.value = false
 }
+const handleFollowClicked = async (followed, userId) => {
+  if (followed) {
+    if (await deleteFollow(userId)) {
+      userDetail.value.fan_count -= 1
+      userDetail.value.followed = false
+    }
+  } else {
+    if (addFollow(userId)) {
+      userDetail.value.fan_count += 1
+      userDetail.value.followed = true
+    }
+  }
+}
 onMounted(() => {
   getUserDetail()
 })
@@ -57,14 +79,18 @@ onMounted(() => {
 <template>
   <div>
     <div class="head">
-      <img class="back-btn" @click="router.push('/')" src="/public/back.svg" width="20" height="20" />
+      <img class="back-btn" @click="router.back" src="/arrow-left.svg" />
       <span class="title">{{ userDetail.nickname }}</span>
     </div>
     <div class="head-block">
       <div class="bg-container"></div>
-      <img class="avatar" :src="getAvatarUrl(cookie.get('user_id'))" />
-      <button class="edit-btn" @click="openEditPopup">编辑个人资料</button>
-      <button class="logout-btn" @click="logout">登出</button>
+      <img class="avatar" :src="getAvatarUrl(route.params.userId)" />
+      <button class="follow-btn" @click="handleFollowClicked(userDetail.followed, userDetail.user_id)" v-if="userDetail.user_id != cookie.get('user_id')">
+        {{ userDetail.followed ? '已关注' : '关注' }}
+      </button>
+
+      <button class="edit-btn" @click="openEditPopup" v-if="userDetail.user_id == cookie.get('user_id')">编辑个人资料</button>
+      <button class="logout-btn" @click="logout" v-if="userDetail.user_id == cookie.get('user_id')">登出</button>
 
       <div class="user-info">
         <div style="font-size: 20px">{{ userDetail.nickname }}</div>
@@ -79,10 +105,10 @@ onMounted(() => {
     <div class="edit-popup" v-if="showEditPopup">
       <div class="popup-header">
         <span>编辑个人资料</span>
-        <img class="close-icon" @click="closeEditPopup" src="/public/close.svg" width="24" height="24" alt="close" />
+        <img class="close-icon" @click="closeEditPopup" src="/close.svg" width="24" height="24" alt="close" />
       </div>
       <div class="avatar-container">
-        <img id="edit-avatar" :src="getAvatarUrl(cookie.get('user_id'))" />
+        <img id="edit-avatar" :src="getAvatarUrl(route.params.userId)" />
       </div>
       <div class="text-container">
         <span class="label">昵称</span>
@@ -117,6 +143,8 @@ onMounted(() => {
 .back-btn {
   cursor: pointer;
   margin: 10px;
+  width: 24px;
+  height: 24px;
 }
 .title {
   font-size: 20px;
@@ -262,5 +290,17 @@ input {
   flex-direction: row;
   align-items: center;
   justify-content: center;
+}
+.follow-btn {
+  position: absolute;
+  top: 260px;
+  right: 20px;
+  background-color: #080808;
+  border: 1px solid #2f3336;
+  border-radius: 999px;
+  color: inherit;
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 10px 16px;
 }
 </style>

@@ -1,4 +1,5 @@
 import axios from 'axios'
+
 const login = axios.create({
   baseURL: 'http://localhost:80/login',
   headers: {},
@@ -23,6 +24,10 @@ const search = axios.create({
   baseURL: 'http://localhost:80/search',
   headers: {},
 })
+const follow = axios.create({
+  baseURL: 'http://localhost:80/follow',
+  headers: {},
+})
 const client = {
   login,
   user,
@@ -30,5 +35,6 @@ const client = {
   interaction,
   comment,
   search,
+  follow,
 }
 export default client
